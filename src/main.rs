@@ -1,8 +1,11 @@
+#![warn(rust_2018_idioms)]
+#![allow(elided_lifetimes_in_paths)]
+
 /// Un Programma Mandelbrot Concorrente
 use image::png::PNGEncoder;
 use image::ColorType;
+use num::traits::bounds;
 use std::fs::File;
-use std::str::FromStr;
 
 use num::Complex;
 
@@ -10,7 +13,24 @@ use std::env;
 
 fn main() {
     // Versione non concorrente per semplicità
-    
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() != 5 {
+        eprintln!("Usage: {} FILE PIXELS UPPERLEFT LOWERRIGHT", args[0]);
+        eprintln!(
+            "Example: {} mandel.png 1000x750 -1.20,0.35 -1,0.20",
+            args[0]
+        );
+        std::process::exit(1);
+    }
+
+    let bounds: (usize, usize) = parse_pair(&args[2], 'x').expect("error parsing image dimensions");
+    let upper_left = parse_complex(&args[3]).expect("error parsing upper left corner point");
+    let lower_right = parse_complex(&args[4]).expect("error parsing lower right corner point");
+
+    let mut pixels = vec![0; bounds.0 * bounds.1];
+
+    render(&mut pixels, bounds, upper_left, lower_right);
 }
 
 /// Scrive il buffer `pixels`, le cui dimensioni sono date da `bounds`,
@@ -28,6 +48,7 @@ fn write_image(
     Ok(())
 }
 
+use std::str::FromStr;
 /// Analizza la stringa `s` come una coppia di coordinate, come `"400x600"` o `"1.0,0.5"`.
 ///
 /// Nello specifico, `s` dovrebbe avere la forma <left><sep><right>, dove <sep> è
