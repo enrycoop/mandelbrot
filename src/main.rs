@@ -1,8 +1,32 @@
+/// Un Programma Mandelbrot Concorrente
+use image::png::PNGEncoder;
+use image::ColorType;
+use std::fs::File;
 use std::str::FromStr;
 
 use num::Complex;
 
-fn main() {}
+use std::env;
+
+fn main() {
+    // Versione non concorrente per semplicità
+    
+}
+
+/// Scrive il buffer `pixels`, le cui dimensioni sono date da `bounds`,
+/// nel file chiamato `filename`
+fn write_image(
+    filename: &str,
+    pixels: &mut [u8],
+    bounds: (usize, usize),
+) -> Result<(), std::io::Error> {
+    let output = File::create(filename)?;
+
+    let encoder = PNGEncoder::new(output);
+    encoder.encode(pixels, bounds.0 as u32, bounds.1 as u32, ColorType::Gray(8))?;
+
+    Ok(())
+}
 
 /// Analizza la stringa `s` come una coppia di coordinate, come `"400x600"` o `"1.0,0.5"`.
 ///
@@ -111,12 +135,11 @@ fn test_pixel_to_point() {
     );
 }
 
-
 /// Renderizza un rettangolo dell'insieme di Mandelbrot in un buffer di pixel.
-/// 
+///
 /// `bounds` da l'altezza e l'ampiezza del buffer `pixels`,
 /// il quale ha un singolo pixel in scala di grigi per byte.
-/// `upper_left` e `upper_right` specificano punti nel piano complesso corrispondenti 
+/// `upper_left` e `upper_right` specificano punti nel piano complesso corrispondenti
 /// agli angoli del pixel buffer.
 fn render(
     pixels: &mut [u8],
@@ -129,13 +152,12 @@ fn render(
             let point = pixel_to_point(bounds, (column, row), upper_left, lower_right);
 
             // se escape_time dice che point appartiene al set, viene renderizzato come nero (0)
-            // altrimenti render assegna colori più scuri ai numeri che hanno impiegato più tempo 
+            // altrimenti render assegna colori più scuri ai numeri che hanno impiegato più tempo
             // per uscire dal cerchio.
-            pixels[row * bounds.0 + column] = 
-                match escape_time(point, 255) {
-                    None => 0,
-                    Some(count) => 255 - count as u8
-                };
+            pixels[row * bounds.0 + column] = match escape_time(point, 255) {
+                None => 0,
+                Some(count) => 255 - count as u8,
+            };
         }
     }
 }
