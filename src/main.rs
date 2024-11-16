@@ -92,7 +92,7 @@ fn pixel_to_point(
 
     Complex {
         re: upper_left.re + pixel.0 as f64 * width / bounds.0 as f64,
-        im: upper_left.im - pixel.0 as f64 * height / bounds.1 as f64, 
+        im: upper_left.im - pixel.0 as f64 * height / bounds.1 as f64,
         // perche' la sottrazione qui? pixel.1 cresce mentre andiamo giu'
         // ma la parte immaginaria cresce  mentre andiamo su
     }
@@ -109,4 +109,33 @@ fn test_pixel_to_point() {
         ),
         Complex { re: -0.5, im: 0.75 }
     );
+}
+
+
+/// Renderizza un rettangolo dell'insieme di Mandelbrot in un buffer di pixel.
+/// 
+/// `bounds` da l'altezza e l'ampiezza del buffer `pixels`,
+/// il quale ha un singolo pixel in scala di grigi per byte.
+/// `upper_left` e `upper_right` specificano punti nel piano complesso corrispondenti 
+/// agli angoli del pixel buffer.
+fn render(
+    pixels: &mut [u8],
+    bounds: (usize, usize),
+    upper_left: Complex<f64>,
+    lower_right: Complex<f64>,
+) {
+    for row in 0..bounds.1 {
+        for column in 0..bounds.0 {
+            let point = pixel_to_point(bounds, (column, row), upper_left, lower_right);
+
+            // se escape_time dice che point appartiene al set, viene renderizzato come nero (0)
+            // altrimenti render assegna colori più scuri ai numeri che hanno impiegato più tempo 
+            // per uscire dal cerchio.
+            pixels[row * bounds.0 + column] = 
+                match escape_time(point, 255) {
+                    None => 0,
+                    Some(count) => 255 - count as u8
+                };
+        }
+    }
 }
