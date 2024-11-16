@@ -26,7 +26,8 @@ fn main() {
 
     //render(&mut pixels, bounds, upper_left, lower_right);
 
-    let threads = 8;
+    let threads = num_cpus::get();
+    println!("Found: {} cpus", threads);
     let rows_per_band = bounds.1 / threads + 1;
 
     {
@@ -49,6 +50,7 @@ fn main() {
     }
 
     write_image(&args[1], &mut pixels, bounds).expect("error writing PNG file");
+    println!("Done.");
 }
 
 use std::str::FromStr;
