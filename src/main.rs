@@ -1,10 +1,6 @@
-#![warn(rust_2018_idioms)]
-#![allow(elided_lifetimes_in_paths)]
-
-/// Un Programma Mandelbrot Concorrente
 use image::png::PNGEncoder;
+/// Un Programma Mandelbrot Concorrente
 use image::ColorType;
-use num::traits::bounds;
 use std::fs::File;
 
 use num::Complex;
@@ -31,21 +27,8 @@ fn main() {
     let mut pixels = vec![0; bounds.0 * bounds.1];
 
     render(&mut pixels, bounds, upper_left, lower_right);
-}
 
-/// Scrive il buffer `pixels`, le cui dimensioni sono date da `bounds`,
-/// nel file chiamato `filename`
-fn write_image(
-    filename: &str,
-    pixels: &mut [u8],
-    bounds: (usize, usize),
-) -> Result<(), std::io::Error> {
-    let output = File::create(filename)?;
-
-    let encoder = PNGEncoder::new(output);
-    encoder.encode(pixels, bounds.0 as u32, bounds.1 as u32, ColorType::Gray(8))?;
-
-    Ok(())
+    write_image(&args[1], &mut pixels, bounds).expect("error writing PNG file");
 }
 
 use std::str::FromStr;
@@ -137,7 +120,7 @@ fn pixel_to_point(
 
     Complex {
         re: upper_left.re + pixel.0 as f64 * width / bounds.0 as f64,
-        im: upper_left.im - pixel.0 as f64 * height / bounds.1 as f64,
+        im: upper_left.im - pixel.1 as f64 * height / bounds.1 as f64,
         // perche' la sottrazione qui? pixel.1 cresce mentre andiamo giu'
         // ma la parte immaginaria cresce  mentre andiamo su
     }
@@ -152,7 +135,10 @@ fn test_pixel_to_point() {
             Complex { re: -1.0, im: 1.0 },
             Complex { re: 1.0, im: -1.0 }
         ),
-        Complex { re: -0.5, im: 0.75 }
+        Complex {
+            re: -0.5,
+            im: -0.75
+        }
     );
 }
 
@@ -168,6 +154,8 @@ fn render(
     upper_left: Complex<f64>,
     lower_right: Complex<f64>,
 ) {
+    assert!(pixels.len() == bounds.0 * bounds.1);
+
     for row in 0..bounds.1 {
         for column in 0..bounds.0 {
             let point = pixel_to_point(bounds, (column, row), upper_left, lower_right);
@@ -181,4 +169,19 @@ fn render(
             };
         }
     }
+}
+
+/// Scrive il buffer `pixels`, le cui dimensioni sono date da `bounds`,
+/// nel file chiamato `filename`
+fn write_image(
+    filename: &str,
+    pixels: &mut [u8],
+    bounds: (usize, usize),
+) -> Result<(), std::io::Error> {
+    let output = File::create(filename)?;
+
+    let encoder = PNGEncoder::new(output);
+    encoder.encode(pixels, bounds.0 as u32, bounds.1 as u32, ColorType::Gray(8))?;
+
+    Ok(())
 }
